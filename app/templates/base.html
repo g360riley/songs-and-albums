@@ -189,8 +189,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('albums.show_albums') }}">
+                        <i class="fas fa-compact-disc me-1"></i>Albums
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('songs.show_songs') }}">
+                        <i class="fas fa-music me-1"></i>Songs
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('favorite_songs.show_favorite_songs') }}">
-                        <i class="fas fa-music me-1"></i>Favorite Songs
+                        <i class="fas fa-heart me-1"></i>Favorites
                     </a>
                 </li>
             </ul>

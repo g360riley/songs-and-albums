@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .album-header {
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.3), rgba(59, 130, 246, 0.3));
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .album-art-large {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .song-list .list-group-item {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid var(--neon-purple);
+        color: white;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .song-list .list-group-item:hover {
+        background: rgba(26, 26, 26, 0.95);
+        border-color: var(--neon-cyan);
+    }
+
+    .track-number {
+        background: var(--neon-purple);
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+
+    .duration-badge {
+        background: rgba(0, 255, 255, 0.1);
+        color: var(--neon-cyan);
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+    }
+
+    .rating-stars {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 5px currentColor;
+    }
+
+    .album-stats {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--neon-cyan);
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #ccc;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="album-header">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                {% if album.album_art_url %}
+                    <img src="{{ album.album_art_url }}" alt="{{ album.album_title }}" class="album-art-large">
+                {% else %}
+                    <div class="album-art-large d-flex align-items-center justify-content-center bg-secondary">
+                        <i class="fas fa-music fa-4x text-white opacity-50"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h1 class="text-white mb-2">{{ album.album_title }}</h1>
+                <h3 class="text-light mb-3">{{ album.artist }}</h3>
+
+                <div class="album-stats mb-3">
+                    {% if album.release_year %}
+                    <div class="stat-item">
+                        <span class="stat-value">{{ album.release_year }}</span>
+                        <span class="stat-label">Year</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="stat-item">
+                        <span class="stat-value">{{ songs|length }}</span>
+                        <span class="stat-label">Songs</span>
+                    </div>
+
+                    {% if songs and songs|selectattr('duration_seconds')|list %}
+                    <div class="stat-item">
+                        <span class="stat-value">
+                            {% set total_seconds = songs|selectattr('duration_seconds')|map(attribute='duration_seconds')|sum %}
+                            {{ (total_seconds // 60)|int }}:{{ (total_seconds % 60)|int|string|rjust(2, '0') }}
+                        </span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if album.genre %}
+                    <span class="badge bg-primary me-2">{{ album.genre }}</span>
+                {% endif %}
+
+                {% if album.notes %}
+                    <p class="text-light mt-3">{{ album.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-list me-2"></i>Songs</h2>
+        <div>
+            <a href="{{ url_for('albums.show_albums') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Back to Albums
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSongModal">
+                <i class="fas fa-plus me-1"></i>Add Song to Album
+            </button>
+        </div>
+    </div>
+
+    {% if songs %}
+    <div class="song-list">
+        {% for song in songs %}
+        <div class="list-group-item">
+            <div class="d-flex align-items-center">
+                <div class="track-number me-3">
+                    {{ song.track_number or '?' }}
+                </div>
+
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-1">{{ song.song_title }}</h5>
+                            <p class="mb-1 text-light">{{ song.artist }}</p>
+                            {% if song.genre %}
+                                <small class="text-muted">{{ song.genre }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-end">
+                            {% if song.duration_seconds %}
+                                <span class="duration-badge">{{ song.duration_seconds|duration }}</span>
+                            {% endif %}
+
+                            {% if song.rating %}
+                            <div class="rating-stars mt-1">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= song.rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if song.notes %}
+                        <small class="text-muted">{{ song.notes[:100] + '...' if song.notes|length > 100 else song.notes }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="ms-3">
+                    <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editSongModal{{ song.song_id }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSongModal{{ song.song_id }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Song Modal -->
+        <div class="modal fade" id="editSongModal{{ song.song_id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Song</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post" action="{{ url_for('songs.update_song', song_id=song.song_id) }}">
+                        <input type="hidden" name="return_to_album" value="{{ album.album_id }}">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Song Title *</label>
+                                        <input type="text" class="form-control" name="song_title" value="{{ song.song_title }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Artist *</label>
+                                        <input type="text" class="form-control" name="artist" value="{{ song.artist }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Track Number</label>
+                                        <input type="number" class="form-control" name="track_number" value="{{ song.track_number or '' }}" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Duration (seconds)</label>
+                                        <input type="number" class="form-control" name="duration_seconds" value="{{ song.duration_seconds or '' }}" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Rating</label>
+                                        <select class="form-control" name="rating" required>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if song.rating == i %}selected{% endif %}>
+                                                    {{ i }} Star{{ 's' if i > 1 else '' }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Genre</label>
+                                        <input type="text" class="form-control" name="genre" value="{{ song.genre or '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Album</label>
+                                        <input type="hidden" name="album_id" value="{{ album.album_id }}">
+                                        <input type="text" class="form-control" value="{{ album.album_title }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" name="notes" rows="3">{{ song.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Song Modal -->
+        <div class="modal fade" id="deleteSongModal{{ song.song_id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Song</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete "<strong>{{ song.song_title }}</strong>"?
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{{ url_for('songs.delete_song', song_id=song.song_id) }}">
+                            <input type="hidden" name="return_to_album" value="{{ album.album_id }}">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center mt-5">
+        <i class="fas fa-music fa-4x text-muted mb-3"></i>
+        <h3 class="text-muted">No songs in this album yet</h3>
+        <p class="text-muted">Add the first song to get started!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Song Modal -->
+<div class="modal fade" id="addSongModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Song to {{ album.album_title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('songs.add_song') }}">
+                <input type="hidden" name="album_id" value="{{ album.album_id }}">
+                <input type="hidden" name="return_to_album" value="{{ album.album_id }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Song Title *</label>
+                                <input type="text" class="form-control" name="song_title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Artist *</label>
+                                <input type="text" class="form-control" name="artist" value="{{ album.artist }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Track Number</label>
+                                <input type="number" class="form-control" name="track_number" value="{{ (songs|length) + 1 }}" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Duration (seconds)</label>
+                                <input type="number" class="form-control" name="duration_seconds" min="1" placeholder="180">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Rating *</label>
+                                <select class="form-control" name="rating" required>
+                                    <option value="">Select Rating</option>
+                                    {% for i in range(1, 6) %}
+                                        <option value="{{ i }}">{{ i }} Star{{ 's' if i > 1 else '' }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Genre</label>
+                        <input type="text" class="form-control" name="genre" value="{{ album.genre or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="What makes this song special?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Song</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

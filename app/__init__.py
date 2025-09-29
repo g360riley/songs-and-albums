@@ -8,9 +8,13 @@ app.secret_key = 'your-secret'  # Replace with an environment
 # Register Blueprints
 from app.blueprints.examples import examples
 from app.blueprints.favorite_songs import favorite_songs
+from app.blueprints.albums import albums
+from app.blueprints.songs import songs
 
 app.register_blueprint(examples, url_prefix='/example')
-app.register_blueprint(favorite_songs, url_prefix='/songs')
+app.register_blueprint(favorite_songs, url_prefix='/favorite-songs')
+app.register_blueprint(albums, url_prefix='/albums')
+app.register_blueprint(songs, url_prefix='/songs')
 
 from . import routes
 

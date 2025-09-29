@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .album-card {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid var(--neon-purple);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .album-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 10px 25px rgba(0, 255, 255, 0.2);
+    }
+
+    .album-art {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: linear-gradient(45deg, var(--neon-purple), var(--neon-cyan));
+    }
+
+    .album-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .stat-badge {
+        background: rgba(0, 255, 255, 0.1);
+        color: var(--neon-cyan);
+        padding: 0.2rem 0.4rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+    }
+
+    .rating-stars {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 5px currentColor;
+    }
+
+    .modal-content {
+        background: rgba(26, 26, 26, 0.95);
+        border: 1px solid var(--neon-purple);
+        color: white;
+    }
+
+    .form-control {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid var(--neon-purple);
+        color: white;
+    }
+
+    .form-control:focus {
+        background: rgba(26, 26, 26, 0.9);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        color: white;
+    }
+
+    .form-label {
+        color: var(--neon-cyan);
+        font-weight: 500;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-compact-disc me-2"></i>Albums Collection</h1>
+            <p class="lead text-light">Organize your music by albums</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAlbumModal">
+            <i class="fas fa-plus me-1"></i>Add New Album
+        </button>
+    </div>
+
+    <div class="row">
+        {% for album in all_albums %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="album-card p-3">
+                <div class="album-art-container mb-3">
+                    {% if album.album_art_url %}
+                        <img src="{{ album.album_art_url }}" alt="{{ album.album_title }}" class="album-art">
+                    {% else %}
+                        <div class="album-art d-flex align-items-center justify-content-center">
+                            <i class="fas fa-music fa-3x text-white opacity-50"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <h5 class="text-white mb-1">{{ album.album_title }}</h5>
+                <p class="text-light mb-2">{{ album.artist }}</p>
+
+                {% if album.release_year %}
+                    <p class="text-muted mb-2">{{ album.release_year }}</p>
+                {% endif %}
+
+                {% if album.genre %}
+                    <span class="badge bg-secondary mb-2">{{ album.genre }}</span>
+                {% endif %}
+
+                <div class="album-stats">
+                    <span class="stat-badge">
+                        <i class="fas fa-music me-1"></i>{{ album.song_count or 0 }} songs
+                    </span>
+                    {% if album.avg_rating %}
+                        <span class="rating-stars">
+                            {% set rating = album.avg_rating|round|int %}
+                            {% for i in range(1, 6) %}
+                                {% if i <= rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="mt-3 d-flex justify-content-between">
+                    <a href="{{ url_for('albums.show_album_details', album_id=album.album_id) }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-eye me-1"></i>View
+                    </a>
+                    <div>
+                        <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editAlbumModal{{ album.album_id }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAlbumModal{{ album.album_id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Album Modal -->
+        <div class="modal fade" id="editAlbumModal{{ album.album_id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Album</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post" action="{{ url_for('albums.update_album', album_id=album.album_id) }}">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Album Title *</label>
+                                        <input type="text" class="form-control" name="album_title" value="{{ album.album_title }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Artist *</label>
+                                        <input type="text" class="form-control" name="artist" value="{{ album.artist }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Release Year</label>
+                                        <input type="number" class="form-control" name="release_year" value="{{ album.release_year or '' }}" min="1900" max="2025">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Genre</label>
+                                        <input type="text" class="form-control" name="genre" value="{{ album.genre or '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Total Tracks</label>
+                                        <input type="number" class="form-control" name="total_tracks" value="{{ album.total_tracks or '' }}" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Album Art URL</label>
+                                <input type="url" class="form-control" name="album_art_url" value="{{ album.album_art_url or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" name="notes" rows="3">{{ album.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Album Modal -->
+        <div class="modal fade" id="deleteAlbumModal{{ album.album_id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Album</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete "<strong>{{ album.album_title }}</strong>" by {{ album.artist }}?
+                        {% if album.song_count > 0 %}
+                            <br><small class="text-warning">This will remove the album reference from {{ album.song_count }} song(s).</small>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{{ url_for('albums.delete_album', album_id=album.album_id) }}">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not all_albums %}
+    <div class="text-center mt-5">
+        <i class="fas fa-compact-disc fa-4x text-muted mb-3"></i>
+        <h3 class="text-muted">No albums yet</h3>
+        <p class="text-muted">Add your first album to get started!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Album Modal -->
+<div class="modal fade" id="addAlbumModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Album</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('albums.add_album') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Album Title *</label>
+                                <input type="text" class="form-control" name="album_title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Artist *</label>
+                                <input type="text" class="form-control" name="artist" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Release Year</label>
+                                <input type="number" class="form-control" name="release_year" min="1900" max="2025">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Genre</label>
+                                <input type="text" class="form-control" name="genre">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Total Tracks</label>
+                                <input type="number" class="form-control" name="total_tracks" min="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Album Art URL</label>
+                        <input type="url" class="form-control" name="album_art_url" placeholder="https://...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="What makes this album special?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Album</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
