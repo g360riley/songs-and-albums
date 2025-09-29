@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .electronic-badge {
+        background: linear-gradient(45deg, var(--neon-purple), var(--neon-cyan));
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .stars-glow .fa-star {
+        text-shadow: 0 0 5px currentColor;
+    }
+
+    .beat-pulse {
+        animation: beatPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes beatPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .modal-content {
+        background: rgba(26, 26, 26, 0.95);
+        border: 1px solid var(--neon-purple);
+        color: white;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--neon-purple);
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--neon-purple);
+    }
+
+    .form-control {
+        background: rgba(26, 26, 26, 0.8);
+        border: 1px solid var(--neon-purple);
+        color: white;
+    }
+
+    .form-control:focus {
+        background: rgba(26, 26, 26, 0.9);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        color: white;
+    }
+
+    .form-label {
+        color: var(--neon-cyan);
+        font-weight: 500;
+    }
+</style>
+<div class="container mt-4">
+    <h1><i class="fas fa-headphones me-2"></i>Electronic Beats Collection</h1>
+    <p class="lead text-light">Curated tracks from the electronic music universe</p>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSongModal">
+        <i class="fas fa-plus me-1"></i>Add New Song
+    </button>
+
+    <!-- Table displaying all favorite songs -->
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Song ID</th>
+                <th>Title</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th>Genre</th>
+                <th>Year</th>
+                <th>Rating</th>
+                <th>Notes</th>
+                <th>Added</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for song in all_songs %}
+            <tr>
+                <td>{{ song.song_id }}</td>
+                <td><strong>{{ song.song_title }}</strong></td>
+                <td>{{ song.artist }}</td>
+                <td>{{ song.album or 'N/A' }}</td>
+                <td>
+                    {% if song.genre %}
+                        <span class="electronic-badge">{{ song.genre }}</span>
+                    {% else %}
+                        <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td>{{ song.release_year or 'N/A' }}</td>
+                <td class="stars-glow">
+                    {% for i in range(1, 6) %}
+                        {% if i <= song.rating %}
+                            <i class="fas fa-star" style="color: var(--neon-cyan);"></i>
+                        {% else %}
+                            <i class="far fa-star text-muted"></i>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>{{ song.notes[:50] + '...' if song.notes and song.notes|length > 50 else song.notes or '' }}</td>
+                <td>{{ song.created_at.strftime('%m/%d/%Y') if song.created_at else 'N/A' }}</td>
+                <td>
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editSongModal{{ song.song_id }}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSongModal{{ song.song_id }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+
+            <!-- Edit Song Modal -->
+            <div class="modal fade" id="editSongModal{{ song.song_id }}" tabindex="-1" aria-labelledby="editSongModalLabel{{ song.song_id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editSongModalLabel{{ song.song_id }}">Edit Song</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post" action="{{ url_for('favorite_songs.update_song', song_id=song.song_id) }}">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="songTitle" class="form-label">Song Title *</label>
+                                            <input type="text" class="form-control" name="song_title" value="{{ song.song_title }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="artist" class="form-label">Artist *</label>
+                                            <input type="text" class="form-control" name="artist" value="{{ song.artist }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="album" class="form-label">Album</label>
+                                            <input type="text" class="form-control" name="album" value="{{ song.album or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="genre" class="form-label">Genre</label>
+                                            <input type="text" class="form-control" name="genre" value="{{ song.genre or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="releaseYear" class="form-label">Release Year</label>
+                                            <input type="number" class="form-control" name="release_year" value="{{ song.release_year or '' }}" min="1900" max="2024">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="rating" class="form-label">Rating *</label>
+                                            <select class="form-control" name="rating" required>
+                                                {% for i in range(1, 6) %}
+                                                    <option value="{{ i }}" {% if song.rating == i %}selected{% endif %}>
+                                                        {{ i }} Star{{ 's' if i > 1 else '' }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" name="notes" rows="3">{{ song.notes or '' }}</textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-warning">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Song Modal -->
+            <div class="modal fade" id="deleteSongModal{{ song.song_id }}" tabindex="-1" aria-labelledby="deleteSongModalLabel{{ song.song_id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteSongModalLabel{{ song.song_id }}">Delete Song</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete "<strong>{{ song.song_title }}</strong>" by {{ song.artist }}?
+                        </div>
+                        <div class="modal-footer">
+                            <form method="post" action="{{ url_for('favorite_songs.delete_song', song_id=song.song_id) }}">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Song Modal -->
+<div class="modal fade" id="addSongModal" tabindex="-1" aria-labelledby="addSongModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSongModalLabel">Add New Favorite Song</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('favorite_songs.show_favorite_songs') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="songTitle" class="form-label">Song Title *</label>
+                                <input type="text" class="form-control" name="song_title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="artist" class="form-label">Artist *</label>
+                                <input type="text" class="form-control" name="artist" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="album" class="form-label">Album</label>
+                                <input type="text" class="form-control" name="album">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="genre" class="form-label">Genre</label>
+                                <input type="text" class="form-control" name="genre">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="releaseYear" class="form-label">Release Year</label>
+                                <input type="number" class="form-control" name="release_year" min="1900" max="2024">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="rating" class="form-label">Rating *</label>
+                                <select class="form-control" name="rating" required>
+                                    <option value="">Select Rating</option>
+                                    {% for i in range(1, 6) %}
+                                        <option value="{{ i }}">{{ i }} Star{{ 's' if i > 1 else '' }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="What makes this song special to you?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Song</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

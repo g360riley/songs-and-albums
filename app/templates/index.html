@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="text-center">
+    <div class="card shadow-lg p-5 mb-5 beat-pulse">
+        <h1 class="display-4 mb-3">
+            <i class="fas fa-volume-up me-3" style="color: var(--neon-cyan);"></i>Welcome to the Beat
+        </h1>
+        <h2 class="h3 mb-4" style="color: var(--neon-purple);">Gage Riley's Electronic Music Universe</h2>
+
+        <p class="lead mb-4 text-light">Dive into a curated collection of electronic beats, from hardstyle to future bass. This is where the magic of electronic music comes alive.</p>
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-10">
+                <p class="mb-0 text-light">Based in Atlanta, I'm passionate about electronic music production and discovering new sounds. From my own original tracks like "Neon Rush" to the latest in EDM, dubstep, and hardstyle - this collection represents my musical journey through the electronic landscape.</p>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-headphones fa-3x mb-3" style="color: var(--neon-cyan);"></i>
+                        <h5 class="card-title" style="color: var(--neon-cyan);">My Collection</h5>
+                        <p class="card-text text-light">Explore my favorite electronic tracks from top artists like Flume, Steve Aoki, and David Guetta.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-music fa-3x mb-3" style="color: var(--neon-purple);"></i>
+                        <h5 class="card-title" style="color: var(--neon-cyan);">Original Tracks</h5>
+                        <p class="card-text text-light">Check out my own productions including "Neon Rush", and "Hardbass XP".</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fab fa-soundcloud fa-3x mb-3" style="color: var(--neon-pink);"></i>
+                        <h5 class="card-title" style="color: var(--neon-cyan);">SoundCloud</h5>
+                        <p class="card-text text-light">Follow my musical journey on SoundCloud with 400+ liked tracks spanning multiple electronic genres.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="{{ url_for('favorite_songs.show_favorite_songs') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-play me-2"></i>Explore Collection
+            </a>
+            <a href="https://soundcloud.com/gage-riley-221768901" target="_blank" class="btn btn-outline-secondary btn-lg">
+                <i class="fab fa-soundcloud me-2"></i>SoundCloud Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .beat-pulse {
+        animation: beatPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes beatPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+
+    .btn-outline-secondary {
+        border-color: var(--neon-cyan);
+        color: var(--neon-cyan);
+        background: transparent;
+    }
+
+    .btn-outline-secondary:hover {
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+        border-color: var(--neon-cyan);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+    }
+
+    .card .fa-headphones, .card .fa-music, .card .fa-soundcloud {
+        text-shadow: 0 0 15px currentColor;
+    }
+</style>
+
+{% endblock %}
